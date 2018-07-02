@@ -11,7 +11,9 @@ version="1.0.0"              # Sets version variable
 # ##################################################
 
 function setupGlobalVariables(){
+if [ -z "$VAR" ]; then
 path=$(pwd);
+fi
 }
 
 function mainScript() {
@@ -181,6 +183,7 @@ usage() {
 This script is used for kukulkan project initial configuration.
 
  ${bold}Options:${reset}
+  < >    --path        Path to kukulkan project
   -i, --init        Download all master projects
   -u, --update      Updating all projects
   -b, --branches    Show all repository and branches
