@@ -10,10 +10,17 @@ version="1.0.0"              # Sets version variable
 #
 # ##################################################
 
+function setupGlobalVariables(){
+path=$(pwd);
+}
 
 function mainScript() {
 if $update ; then
 update
+fi
+
+if $branches ; then
+showBranchesInfo
 fi
 
 if $init ; then
@@ -28,6 +35,46 @@ git clone git@github.com:kukulkan-project/kukulkan-grammar.git
 git clone git@github.com:kukulkan-project/kukulkan-generator-angularjs.git
 git clone git@github.com:kukulkan-project/kukulkan-engine.git
 git clone git@github.com:kukulkan-project/kukulkan-metamodel.git
+}
+
+function showBranchesInfo(){
+cd $path
+cd 'kukulkan-grammar/' || exit
+GIT_BRANCH=$(git rev-parse --abbrev-ref HEAD);
+info "kukulkan-grammar : $GIT_BRANCH"
+if [ $? -eq 0 ]; then
+    cd '../kukulkan-metamodel/' || exit
+    GIT_BRANCH=$(git rev-parse --abbrev-ref HEAD);
+    info "kukulkan-metamodel : $GIT_BRANCH"
+    if [ $? -eq 0 ]; then
+        cd '../kukulkan-engine/' || exit
+        GIT_BRANCH=$(git rev-parse --abbrev-ref HEAD);
+        info "kukulkan-engine : $GIT_BRANCH"
+        if [ $? -eq 0 ]; then
+            cd '../kukulkan-generator-angularjs' || exit
+            GIT_BRANCH=$(git rev-parse --abbrev-ref HEAD);
+            info "kukulkan-generator-angularjs : $GIT_BRANCH"
+            if [ $? -eq 0 ]; then
+                cd '../kukulkan-shell/' || exit
+                GIT_BRANCH=$(git rev-parse --abbrev-ref HEAD);
+                info "kukulkan-shell : $GIT_BRANCH"
+                if [ $? -eq 0 ]; then
+                    success "kukulkan branches"
+                else
+                    error "kukulkan-shell"
+                fi
+            else
+                 error "kukulkan-generator-angularjs"
+            fi
+        else
+            error "kukulkan-engine"
+        fi
+    else
+        error "kukulkan-metamodel"
+    fi
+else
+    error "kukulkan-grammar"
+fi  
 }
 
 function update(){
@@ -100,6 +147,7 @@ force=false
 strict=false
 debug=false
 init=false
+branches=false;
 update=false
 args=()
 
@@ -133,10 +181,9 @@ usage() {
 This script is used for kukulkan project initial configuration.
 
  ${bold}Options:${reset}
-  -p, --path        Path to kukulkan project
   -i, --init        Download all master projects
   -u, --update      Updating all projects
-  -i, --init        Download all master projects
+  -b, --branches    Show all repository and branches
   -h, --help        Display this help and exit
       --version     Output version information and exit
 "
@@ -194,6 +241,7 @@ while [[ $1 = -?* ]]; do
     -v|--verbose) verbose=true ;;
     -u|--update) update=true ;;
     -i|--init) init=true ;;
+    -b|--branches) branches=true ;;
     -l|--log) printLog=true ;;
     -q|--quiet) quiet=true ;;
     -s|--strict) strict=true;;
@@ -244,6 +292,7 @@ function success ()   { local _message="${*}"; echo -e "$(_alert success)"; }
 function input()      { local _message="${*}"; echo -n "$(_alert input)"; }
 function header()     { local _message="== ${*} ==  "; echo -e "$(_alert header)"; }
 function verbose()    { if ${verbose}; then debug "$@"; fi }
+
 
 # SEEKING CONFIRMATION
 # ------------------------------------------------------
@@ -297,6 +346,9 @@ if ${strict}; then set -o nounset ; fi
 # Bash will remember & return the highest exitcode in a chain of pipes.
 # This way you can catch the error in case mysqldump fails in `mysqldump |gzip`, for example.
 set -o pipefail
+
+# Setting up Global Variables
+setupGlobalVariables
 
 # Run your script
 mainScript
