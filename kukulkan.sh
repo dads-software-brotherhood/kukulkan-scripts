@@ -27,6 +27,10 @@ if $branches ; then
 showBranchesInfo
 fi
 
+if $compile ; then
+compile
+fi
+
 if $init ; then
 clone
 fi
@@ -121,6 +125,46 @@ else
 fi
 }
 
+function compile(){
+cd $path
+cd 'kukulkan-grammar/' || exit
+info "Compiling ... kukulkan-grammar"
+mvn clean install -DskipTests
+if [ $? -eq 0 ]; then
+    cd '../kukulkan-metamodel/' || exit
+    info "Compiling ... kukulkan-metamodel"
+    mvn clean install -DskipTests
+    if [ $? -eq 0 ]; then
+        cd '../kukulkan-engine/' || exit
+        info "Compiling ... kukulkan-engine"
+        mvn clean install -DskipTests
+        if [ $? -eq 0 ]; then
+            cd '../kukulkan-generator-angularjs' || exit
+            info "Compiling ... kukulkan-generator-angularjs"
+            mvn clean install -DskipTests
+            if [ $? -eq 0 ]; then
+                cd '../kukulkan-shell/' || exit
+                info "Compiling ... kukulkan-shell"
+                mvn clean install -DskipTests
+                if [ $? -eq 0 ]; then
+                    success "kukulkan project build"
+                else
+                    error "kukulkan-shell"
+                fi
+            else
+                 error "kukulkan-generator-angularjs"
+            fi
+        else
+            error "kukulkan-engine"
+        fi
+    else
+        error "kukulkan-metamodel"
+    fi
+else
+    error "kukulkan-grammar"
+fi
+}
+
 function trapCleanup() {
   echo ""
   # Delete temp files, if any
@@ -151,8 +195,9 @@ force=false
 strict=false
 debug=false
 init=false
-branches=false;
+branches=false
 update=false
+compile=false
 args=()
 
 # Set Colors
@@ -188,6 +233,7 @@ This script is used for kukulkan project initial configuration.
       --path        Path to kukulkan project
   -i, --init        Download all master projects
   -u, --update      Updating all projects
+  -c, --comple      Compiling all projects
   -b, --branches    Show all repository and branches
   -h, --help        Display this help and exit
       --version     Output version information and exit
@@ -245,6 +291,7 @@ while [[ $1 = -?* ]]; do
       echo ;;
     -v|--verbose) verbose=true ;;
     -u|--update) update=true ;;
+    -c|--compile) compile=true ;;
     -i|--init) init=true ;;
     -b|--branches) branches=true ;;
     -l|--log) printLog=true ;;
