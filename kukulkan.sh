@@ -20,15 +20,15 @@ info "Running on : $path"
 
 function mainScript() {
 if $update ; then
-update
+executeCommand "git pull" "Updating"
 fi
 
 if $branches ; then
-showBranchesInfo
+executeCommand "mvn clean install -DskipTests"
 fi
 
 if $compile ; then
-compile
+executeCommand "mvn clean install -DskipTests" "Compiling"
 fi
 
 if $init ; then
@@ -37,117 +37,48 @@ fi
 }
 
 function clone(){
-cd $path
-git clone git@github.com:kukulkan-project/kukulkan-shell.git
-git clone git@github.com:kukulkan-project/kukulkan-grammar.git
-git clone git@github.com:kukulkan-project/kukulkan-generator-angularjs.git
-git clone git@github.com:kukulkan-project/kukulkan-engine.git
-git clone git@github.com:kukulkan-project/kukulkan-metamodel.git
-}
-
-function showBranchesInfo(){
-cd $path
-cd 'kukulkan-grammar/' || exit
-GIT_BRANCH=$(git rev-parse --abbrev-ref HEAD);
-info "kukulkan-grammar : $GIT_BRANCH"
-if [ $? -eq 0 ]; then
-    cd '../kukulkan-metamodel/' || exit
-    GIT_BRANCH=$(git rev-parse --abbrev-ref HEAD);
-    info "kukulkan-metamodel : $GIT_BRANCH"
-    if [ $? -eq 0 ]; then
-        cd '../kukulkan-engine/' || exit
-        GIT_BRANCH=$(git rev-parse --abbrev-ref HEAD);
-        info "kukulkan-engine : $GIT_BRANCH"
-        if [ $? -eq 0 ]; then
-            cd '../kukulkan-generator-angularjs' || exit
-            GIT_BRANCH=$(git rev-parse --abbrev-ref HEAD);
-            info "kukulkan-generator-angularjs : $GIT_BRANCH"
-            if [ $? -eq 0 ]; then
-                cd '../kukulkan-shell/' || exit
-                GIT_BRANCH=$(git rev-parse --abbrev-ref HEAD);
-                info "kukulkan-shell : $GIT_BRANCH"
-                if [ $? -eq 0 ]; then
-                    success "kukulkan branches"
-                else
-                    error "kukulkan-shell"
-                fi
-            else
-                 error "kukulkan-generator-angularjs"
-            fi
-        else
-            error "kukulkan-engine"
-        fi
-    else
-        error "kukulkan-metamodel"
-    fi
-else
-    error "kukulkan-grammar"
-fi  
-}
-
-function update(){
-cd $path
-cd 'kukulkan-grammar/' || exit
-info "Updating ... kukulkan-grammar"
-git pull
-if [ $? -eq 0 ]; then
-    cd '../kukulkan-metamodel/' || exit
-    info "Updating ... kukulkan-metamodel"
-    git pull
-    if [ $? -eq 0 ]; then
-        cd '../kukulkan-engine/' || exit
-        info "Updating ... kukulkan-engine"
-        git pull
-        if [ $? -eq 0 ]; then
-            cd '../kukulkan-generator-angularjs' || exit
-            info "Updating ... kukulkan-generator-angularjs"
-            git pull
-            if [ $? -eq 0 ]; then
-                cd '../kukulkan-shell/' || exit
-                info "Updating ... kukulkan-shell"
-                git pull
-                if [ $? -eq 0 ]; then
-                    success "kukulkan project build"
-                else
-                    error "kukulkan-shell"
-                fi
-            else
-                 error "kukulkan-generator-angularjs"
-            fi
-        else
-            error "kukulkan-engine"
-        fi
-    else
-        error "kukulkan-metamodel"
-    fi
-else
-    error "kukulkan-grammar"
+read -p "Are you sure? " -n 1 -r
+echo    # move to a new line
+if [[ $REPLY =~ ^[Yy]$ ]]
+then
+  cd $path
+  git clone git@github.com:kukulkan-project/kukulkan-shell.git
+  git clone git@github.com:kukulkan-project/kukulkan-grammar.git
+  git clone git@github.com:kukulkan-project/kukulkan-generator-angularjs.git
+  git clone git@github.com:kukulkan-project/kukulkan-engine.git
+  git clone git@github.com:kukulkan-project/kukulkan-metamodel.git
 fi
 }
 
-function compile(){
+
+
+function evalCommand(){
+if [[ -z "$3" ]]; then
+  MESSAGE=$(git rev-parse --abbrev-ref HEAD);
+  info "$2 : $MESSAGE"
+else
+  info "$2 :: $3"
+  eval $1
+fi }
+
+function executeCommand(){
 cd $path
 cd 'kukulkan-grammar/' || exit
-info "Compiling ... kukulkan-grammar"
-mvn clean install -DskipTests
+evalCommand "$1" "kukulkan-grammar" $2
 if [ $? -eq 0 ]; then
     cd '../kukulkan-metamodel/' || exit
-    info "Compiling ... kukulkan-metamodel"
-    mvn clean install -DskipTests
+    evalCommand "$1" "kukulkan-metamodel" $2 
     if [ $? -eq 0 ]; then
         cd '../kukulkan-engine/' || exit
-        info "Compiling ... kukulkan-engine"
-        mvn clean install -DskipTests
+        evalCommand "$1" "kukulkan-engine" $2
         if [ $? -eq 0 ]; then
             cd '../kukulkan-generator-angularjs' || exit
-            info "Compiling ... kukulkan-generator-angularjs"
-            mvn clean install -DskipTests
+            evalCommand "$1" "kukulkan-generator-angularjs" $2
             if [ $? -eq 0 ]; then
                 cd '../kukulkan-shell/' || exit
-                info "Compiling ... kukulkan-shell"
-                mvn clean install -DskipTests
+                evalCommand "$1" "kukulkan-shell" $2
                 if [ $? -eq 0 ]; then
-                    success "kukulkan project build"
+                    success "kukulkan project :: $2"
                 else
                     error "kukulkan-shell"
                 fi
